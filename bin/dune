@@ -1,0 +1,4 @@
+(executable
+ (name main)
+ (libraries cohttp-lwt-unix yojson lwt.unix lwt_ssl)
+ (preprocess (pps lwt_ppx)))
