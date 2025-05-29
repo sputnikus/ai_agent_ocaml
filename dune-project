@@ -20,7 +20,7 @@
  (name ai_agent_ocaml)
  (synopsis "A short synopsis")
  (description "A longer description")
- (depends ocaml)
+ (depends ocaml lwt lwt_ppx cohttp-lwt-unix yojson)
  (tags
   ("add topics" "to describe" your project)))
 
