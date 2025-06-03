@@ -1,4 +1,5 @@
 (executable
  (name main)
  (libraries ai_agent lwt.unix)
- (preprocess (pps lwt_ppx)))
+ (preprocess
+  (pps lwt_ppx)))
