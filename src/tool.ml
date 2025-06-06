@@ -31,7 +31,11 @@ let math_tool =
     description =
       "Performs basic math operations. The expected input format is 'number \
        operator number'. Supported operators are +, -, *, and /. ";
-    schema = `Assoc [ ("expression", `String "e.g. \"2 + 2\"") ];
+    schema =
+      `Assoc
+        [
+          ("expression", `String "A binary math expression like, e.g. \"2 + 2\"");
+        ];
     run =
       (fun args_json ->
         match args_json with
@@ -70,7 +74,8 @@ let read_tool =
   {
     name = "read";
     description = "Reads the contents of a file. Usage: read filename.txt";
-    schema = `Assoc [ ("filename", `String "e.g. \"filename.txt\"") ];
+    schema =
+      `Assoc [ ("filename", `String "Path to a file, e.g. \"filename.txt\"") ];
     run =
       (fun args_json ->
         match args_json with
@@ -103,3 +108,13 @@ let tool_description tool =
   let schema_str = Yojson.Safe.pretty_to_string tool.schema in
   Printf.sprintf "- %s: %s\n  Arguments JSON: %s" tool.name tool.description
     schema_str
+
+let to_json tool =
+  `Assoc
+    [
+      ("name", `String tool.name);
+      ("description", `String tool.description);
+      ("schema", tool.schema);
+    ]
+
+let all_to_json () = `List (List.map to_json tools)

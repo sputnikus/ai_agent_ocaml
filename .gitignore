@@ -32,3 +32,8 @@ setup.log
 # Local OPAM switch
 _opam/
 
+# Test logs
+agent.log
+
+# Test files
+secret-file.txt

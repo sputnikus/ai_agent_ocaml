@@ -3,7 +3,7 @@ open Message
 let build_prompt (history : message list) =
   `Assoc
     [
-      ("model", `String "gpt-3.5-turbo-0125");
+      ("model", `String (Config.model ()));
       ("messages", `List (List.map yojson_of_message history));
     ]
 
@@ -27,7 +27,7 @@ let extract_reply body_str =
 
 let fetch_reply body_json =
   let uri = Uri.of_string "https://api.openai.com/v1/chat/completions" in
-  let api_key = Sys.getenv "OPENAI_API_KEY" in
+  let api_key = Config.openai_api_key () in
   let headers =
     Cohttp.Header.init_with "Authorization" ("Bearer " ^ api_key) |> fun h ->
     Cohttp.Header.add h "Content-Type" "application/json"
