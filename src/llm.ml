@@ -8,6 +8,7 @@ let build_prompt (history : message list) =
     ]
 
 let extract_reply body_str =
+  Logger.debug ~tag:"llm_response" body_str;
   let json = Yojson.Safe.from_string body_str in
   match json with
   | `Assoc fields -> (

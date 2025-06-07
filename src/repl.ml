@@ -2,6 +2,7 @@ open Message
 open Agent
 open Llm
 open Tool
+open Context
 
 (* REPL colors *)
 let color_reset = "\027[0m"
@@ -33,7 +34,7 @@ let print_intro () =
   in
   Lwt_io.printl ""
 
-let rec repl_loop history =
+let rec repl_loop context =
   let%lwt () = Lwt_io.print (blue ^ "You" ^ color_reset ^ ": ") in
   let%lwt user_input = Lwt_io.read_line_opt Lwt_io.stdin in
   match user_input with
@@ -44,7 +45,7 @@ let rec repl_loop history =
       let%lwt () =
         Tool.all_to_json () |> Yojson.Safe.pretty_to_string |> Lwt_io.printl
       in
-      repl_loop history
+      repl_loop context
   | Some input when String.starts_with ~prefix:"/schema " input -> (
       let tool_name = String.sub input 8 (String.length input - 8) in
       match find_tool tool_name with
@@ -52,17 +53,16 @@ let rec repl_loop history =
           let%lwt () =
             tool.Tool.schema |> Yojson.Safe.pretty_to_string |> Lwt_io.printl
           in
-          repl_loop history
+          repl_loop context
       | None ->
           let%lwt () =
             Lwt_io.printlf "%sTool not found%s: %s" red color_reset tool_name
           in
-          repl_loop history)
+          repl_loop context)
   | Some input -> (
       Logger.info ~tag:"user_input" input;
-      let prompt =
-        build_prompt (history @ [ { role = `User; content = input } ])
-      in
+      let context = add_turns context [ { role = `User; content = input } ] in
+      let prompt = build_prompt context in
       Logger.debug ~tag:"json_payload" (Yojson.Safe.pretty_to_string prompt);
       let%lwt reply = fetch_reply prompt in
       match try_parse_tool_call reply with
@@ -79,35 +79,56 @@ let rec repl_loop history =
               let%lwt tool_output = tool.run tool_args_json in
               Logger.result ~tag:"tool_call"
                 (Printf.sprintf "%s %s" tool_name tool_output);
-              let history = add_turn history input reply in
-              let history = history @ [ tool_response_message tool_output ] in
-              let prompt = build_prompt history in
+              let context =
+                add_turns context
+                  [
+                    { role = `User; content = input };
+                    { role = `Assistant; content = reply };
+                    tool_response_message tool_output;
+                  ]
+              in
+              let prompt = build_prompt context in
               let%lwt follow_up = fetch_reply prompt in
               let%lwt () =
                 Lwt_io.printf "%sAssistant%s: %s\n\n" green color_reset
                   follow_up
               in
-              let history =
-                add_turn history
-                  ("[Follow-up after tool] " ^ tool_output)
-                  follow_up
+              let context =
+                add_turns context
+                  [
+                    {
+                      role = `System;
+                      content = "[Follow-up after tool] " ^ tool_output;
+                    };
+                    { role = `Assistant; content = follow_up };
+                  ]
               in
-              repl_loop history
+              repl_loop context
           | None ->
               Logger.warn ~tag:"invalid_tool_call" reply;
               let%lwt () =
                 Lwt_io.printlf "%sTool not found%s: %s" red color_reset
                   tool_name
               in
-              let history = add_turn history input reply in
-              let history =
-                add_turn history input ("[Tool error] " ^ tool_name)
+              let context =
+                add_turns context
+                  [
+                    { role = `User; content = input };
+                    { role = `Assistant; content = reply };
+                    { role = `System; content = "[Tool error] " ^ tool_name };
+                  ]
               in
-              repl_loop history)
+              repl_loop context)
       | None ->
           Logger.info ~tag:"llm_reply" reply;
           let%lwt () =
             Lwt_io.printf "%sAssistant%s: %s\n\n" green color_reset reply
           in
-          let history = add_turn history input reply in
-          repl_loop history)
+          let context =
+            add_turns context
+              [
+                { role = `User; content = input };
+                { role = `Assistant; content = reply };
+              ]
+          in
+          repl_loop context)

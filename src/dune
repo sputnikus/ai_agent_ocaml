@@ -1,6 +1,6 @@
 (library
  (name ai_agent)
- (modules agent llm message repl tool logger config)
+ (modules agent llm message repl tool logger config context)
  (libraries cohttp-lwt-unix yojson lwt.unix lwt_ssl)
  (preprocess
   (pps lwt_ppx)))

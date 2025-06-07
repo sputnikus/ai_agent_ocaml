@@ -1,4 +1,3 @@
-open Message
 open Tool
 
 let system_prompt_with_tools =
@@ -7,15 +6,6 @@ let system_prompt_with_tools =
    with a JSON object. Schema \n\
    {\"tool_call\": {\"name\": \"tool_name\", \"arguments\": \"Arguments JSON\"}}\n\
    Available tools:\n" ^ descriptions
-
-let initial_history = [ { role = `System; content = system_prompt_with_tools } ]
-
-let add_turn history user_input assistant_reply =
-  history
-  @ [
-      { role = `User; content = user_input };
-      { role = `Assistant; content = assistant_reply };
-    ]
 
 (* Parse a tool call from LLM output *)
 let try_parse_tool_call json_str =
