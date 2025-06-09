@@ -1,12 +1,3 @@
-open Message
-
-let build_prompt (history : message list) =
-  `Assoc
-    [
-      ("model", `String (Config.model ()));
-      ("messages", `List (List.map yojson_of_message history));
-    ]
-
 let extract_reply body_str =
   Logger.debug ~tag:"llm_response" body_str;
   let json = Yojson.Safe.from_string body_str in

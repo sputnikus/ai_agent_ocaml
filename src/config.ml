@@ -7,7 +7,7 @@ let openai_api_key () =
   | None -> failwith "Missing OPENAI_API_KEY environment variable"
 
 let agent_name () = get_env "AGENT_NAME" ~default:"OCamlAgent"
-let debug_enabled () = Sys.getenv_opt "AGENT_DEBUG" = Some "1"
+let debug () = Sys.getenv_opt "AGENT_DEBUG" = Some "1"
 let model () = get_env "OPENAI_MODEL" ~default:"gpt-3.5-turbo-0125"
 
 let tool_timeout () =

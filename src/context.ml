@@ -1,22 +1,18 @@
 open Agent
 open Message
 
-type t = {
-  system : message;
-  turns : message list;
-  max_chars : int;
-}
+type t = { system : message; turns : message list; max_chars : int }
 
 let trim_history ~max_chars turns =
   let rec loop acc remaining =
     match remaining with
-    | [] -> List.rev acc
+    | [] -> acc
     | msg :: rest ->
-        let total = List.fold_left (fun sum m -> sum + String.length m.content) 0 acc in
-        if total + String.length msg.content > max_chars then
-          List.rev acc
-        else
-          loop (msg :: acc) rest
+        let total =
+          List.fold_left (fun sum m -> sum + String.length m.content) 0 acc
+        in
+        if total + String.length msg.content > max_chars then acc
+        else loop (msg :: acc) rest
   in
   (* We are trimming the oldest, keeping the most recent*)
   loop [] (List.rev turns)
@@ -26,7 +22,8 @@ let build_prompt context =
   `Assoc
     [
       ("model", `String (Config.model ()));
-      ("messages", `List (List.map yojson_of_message (context.system :: trimmed)));
+      ( "messages",
+        `List (List.map yojson_of_message (context.system :: trimmed)) );
     ]
 
 let init_context max_chars =
