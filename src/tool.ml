@@ -33,9 +33,7 @@ let math_tool =
        operator number'. Supported operators are +, -, *, and /. ";
     schema =
       `Assoc
-        [
-          ("expression", `String "A binary math expression like, e.g. \"2 + 2\"");
-        ];
+        [ ("expression", `String "A binary math expression like, e.g. 2 + 2") ];
     run =
       (fun args_json ->
         match args_json with
@@ -73,9 +71,9 @@ let ls_tool =
 let read_tool =
   {
     name = "read";
-    description = "Reads the contents of a file. Usage: read filename.txt";
+    description = "Reads the contents of a file.";
     schema =
-      `Assoc [ ("filename", `String "Path to a file, e.g. \"filename.txt\"") ];
+      `Assoc [ ("filename", `String "Path to a file, e.g. filename.txt") ];
     run =
       (fun args_json ->
         match args_json with

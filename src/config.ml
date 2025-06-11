@@ -1,3 +1,11 @@
+(* REPL colors *)
+let color_reset = "\027[0m"
+let blue = "\027[34m"
+let green = "\027[32m"
+let yellow = "\027[33m"
+let magenta = "\027[35m"
+let red = "\027[31m"
+
 let get_env name ~default =
   match Sys.getenv_opt name with Some value -> value | None -> default
 

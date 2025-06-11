@@ -24,6 +24,7 @@ let fetch_reply body_json =
     Cohttp.Header.init_with "Authorization" ("Bearer " ^ api_key) |> fun h ->
     Cohttp.Header.add h "Content-Type" "application/json"
   in
+  Logger.debug ~tag:"llm_request" (Yojson.Safe.pretty_to_string body_json);
   let body = Yojson.Safe.to_string body_json in
 
   let%lwt _, body_stream =
