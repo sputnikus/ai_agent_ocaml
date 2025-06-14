@@ -27,8 +27,7 @@ let build_prompt context =
   `Assoc
     [
       ("model", `String (Config.openai_model ()));
-      ( "messages",
-        `List (List.map yojson_of_message messages) );
+      ("messages", `List (List.map yojson_of_message messages));
     ]
 
 let init_context max_chars =

@@ -16,34 +16,34 @@ let extract_reply body_str =
       | _ -> Some "[Missing or invalid 'content' field.]")
   | _ -> None
 
-let message_to_json msg =
-  Message.yojson_of_message msg
+let message_to_json msg = Message.yojson_of_message msg
 
 (* Anthropic API requires system message to be separate from messages array *)
 let separate_system_message messages =
-  let system_msgs, other_msgs = 
-    List.partition (fun msg -> msg.Message.role = `System) messages 
+  let system_msgs, other_msgs =
+    List.partition (fun msg -> msg.Message.role = `System) messages
   in
-  let system_content = 
-    system_msgs 
-    |> List.map (fun msg -> msg.Message.content) 
+  let system_content =
+    system_msgs
+    |> List.map (fun msg -> msg.Message.content)
     |> String.concat "\n\n"
   in
   (system_content, other_msgs)
 
 let build_request_body messages =
-  let (system_content, non_system_msgs) = separate_system_message messages in
-  let base_fields = [
-    ("model", `String (Config.anthropic_model ()));
-    ("messages", `List (List.map message_to_json non_system_msgs));
-    ("max_tokens", `Int (Config.max_chars ()));
-    ("temperature", `Float 0.7)
-  ] in
-  let fields = 
+  let system_content, non_system_msgs = separate_system_message messages in
+  let base_fields =
+    [
+      ("model", `String (Config.anthropic_model ()));
+      ("messages", `List (List.map message_to_json non_system_msgs));
+      ("max_tokens", `Int (Config.max_chars ()));
+      ("temperature", `Float 0.7);
+    ]
+  in
+  let fields =
     if system_content <> "" then
       ("system", `String system_content) :: base_fields
-    else
-      base_fields
+    else base_fields
   in
   `Assoc fields
 
@@ -69,5 +69,4 @@ let send_request messages =
   | Some reply -> Lwt.return reply
   | None -> Lwt.return "[error parsing Anthropic reply]"
 
-let create () = 
-  { name = "Anthropic"; send_request }
+let create () = { name = "Anthropic"; send_request }
