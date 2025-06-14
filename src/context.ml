@@ -17,13 +17,18 @@ let trim_history ~max_chars turns =
   (* We are trimming the oldest, keeping the most recent*)
   loop [] (List.rev turns)
 
-let build_prompt context =
+let build_messages context =
   let trimmed = trim_history ~max_chars:context.max_chars context.turns in
+  context.system :: trimmed
+
+(* Deprecated: kept for backwards compatibility *)
+let build_prompt context =
+  let messages = build_messages context in
   `Assoc
     [
-      ("model", `String (Config.model ()));
+      ("model", `String (Config.openai_model ()));
       ( "messages",
-        `List (List.map yojson_of_message (context.system :: trimmed)) );
+        `List (List.map yojson_of_message messages) );
     ]
 
 let init_context max_chars =

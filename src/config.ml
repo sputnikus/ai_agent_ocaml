@@ -14,9 +14,22 @@ let openai_api_key () =
   | Some key -> key
   | None -> failwith "Missing OPENAI_API_KEY environment variable"
 
+let anthropic_api_key () =
+  match Sys.getenv_opt "ANTHROPIC_API_KEY" with
+  | Some key -> key
+  | None -> failwith "Missing ANTHROPIC_API_KEY environment variable"
+
 let agent_name () = get_env "AGENT_NAME" ~default:"OCamlAgent"
 let debug () = Sys.getenv_opt "AGENT_DEBUG" = Some "1"
-let model () = get_env "OPENAI_MODEL" ~default:"gpt-3.5-turbo-0125"
+
+(* Provider selection *)
+let llm_provider () = get_env "LLM_PROVIDER" ~default:"openai"
+
+(* Model configurations *)
+let openai_model () = get_env "OPENAI_MODEL" ~default:"gpt-3.5-turbo-0125"
+
+let anthropic_model () =
+  get_env "ANTHROPIC_MODEL" ~default:"claude-3-haiku-20240307"
 
 let tool_timeout () =
   match Sys.getenv_opt "AGENT_TOOL_TIMEOUT" with

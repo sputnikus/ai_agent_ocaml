@@ -31,9 +31,16 @@ This is an OCaml-based AI agent that provides a conversational interface with to
 - REPL provides colored terminal output with proper error handling
 - Configuration via environment variables (OPENAI_API_KEY, AGENT_DEBUG, etc.)
 
+**LLM Provider System:**
+- Abstract interface in `llm_provider.ml` allows pluggable LLM backends
+- `openai_provider.ml` - OpenAI ChatGPT API implementation
+- `anthropic_provider.ml` - Anthropic Claude API implementation
+- `llm_factory.ml` - Provider selection and instantiation
+- `llm.ml` - Backwards-compatible wrapper maintaining existing interface
+
 **Dependencies:**
 - `lwt` + `lwt_ppx` for async programming
-- `cohttp-lwt-unix` for HTTP requests to OpenAI
+- `cohttp-lwt-unix` for HTTP requests to LLM APIs
 - `yojson` for JSON parsing/generation
 - `lwt_ssl` for HTTPS support
 
@@ -67,11 +74,16 @@ Implementation aligns with [12-Factor Agents](https://github.com/humanlayer/12-f
 
 ## Environment Variables
 
-Required:
-- `OPENAI_API_KEY` - OpenAI API key for LLM requests
+**LLM Provider Selection:**
+- `LLM_PROVIDER` - Choose LLM provider: "openai" or "anthropic" (default: openai)
 
-Optional:
-- `OPENAI_MODEL` - Model to use (default: gpt-3.5-turbo-0125)
+**Required (based on provider):**
+- `OPENAI_API_KEY` - OpenAI API key (required when LLM_PROVIDER=openai)
+- `ANTHROPIC_API_KEY` - Anthropic API key (required when LLM_PROVIDER=anthropic)
+
+**Optional:**
+- `OPENAI_MODEL` - OpenAI model to use (default: gpt-3.5-turbo-0125)
+- `ANTHROPIC_MODEL` - Anthropic model to use (default: claude-3-haiku-20240307)
 - `AGENT_NAME` - Agent name (default: OCamlAgent)
 - `AGENT_DEBUG` - Set to "1" to enable debug logging
 - `AGENT_TOOL_TIMEOUT` - Tool execution timeout in seconds (default: 10)

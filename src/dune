@@ -1,6 +1,6 @@
 (library
  (name ai_agent)
- (modules agent llm message repl tool logger config context shutdown)
+ (modules agent llm llm_provider llm_factory openai_provider anthropic_provider message repl tool logger config context shutdown)
  (libraries cohttp-lwt-unix yojson lwt.unix lwt_ssl)
  (preprocess
   (pps lwt_ppx)))

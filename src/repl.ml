@@ -93,8 +93,8 @@ let repl_loop context =
             let context =
               add_turns context [ { role = `User; content = input } ]
             in
-            let prompt = build_prompt context in
-            let%lwt reply = fetch_reply prompt in
+            let messages = build_messages context in
+            let%lwt reply = fetch_reply_messages messages in
             match parse_tool_calls reply with
             | Some calls ->
                 let%lwt outputs = run_tool_chain calls in
