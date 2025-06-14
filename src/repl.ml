@@ -9,21 +9,30 @@ open Lwt.Infix
 let print_intro () =
   let legend =
     [
-      (green, "Assistant");
-      (blue, "You");
-      (yellow, "Tool Output");
-      (red, "System messages");
+      (green, "Assistant", "Model text reply");
+      (blue, "You", "Your input");
+      (yellow, "Tool Output", "Data returned by local tool");
+      (red, "System messages", "Human readable errors");
     ]
   in
-  let%lwt () = Lwt_io.printl "Welcome to OCaml Agent 🧠" in
   let%lwt () =
-    Lwt_io.printl "Type your message, or type 'exit' (Ctrl+D) to quit.\n"
+    Lwt_io.printl
+      {|
+                   ,,__     ██████╗  ██████╗ ███████╗███╗   ██╗████████╗
+         ..  ..   / o._)    ██╔══██╗██╔════╝ ██╔════╝████╗  ██║╚══██╔══╝
+        /--'/--\  \-'||     ███████║██║  ███╗█████╗  ██╔██╗ ██║   ██║
+       /        \_/ / |     ██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║
+     .'\  \__\  __.'.'      ██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║
+       )\ |  )\ |           ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝
+      // \ // \
+     ||_  \|_  \_          Type your message, or type 'exit' (Ctrl+D) to quit.
+     '--' '--'' '--'
+  |}
   in
   let%lwt () =
     legend
-    |> List.map (fun (c, label) ->
-           Lwt_io.printlf "%s%s%s = %s" c label color_reset
-             (String.lowercase_ascii label))
+    |> List.map (fun (c, label, desc) ->
+           Lwt_io.printlf "%s%s%s = %s" c label color_reset desc)
     |> Lwt.join
   in
   Lwt_io.printl ""
