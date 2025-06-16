@@ -33,7 +33,16 @@ let math_tool =
        operator number'. Supported operators are +, -, *, and /. ";
     schema =
       `Assoc
-        [ ("expression", `String "A binary math expression like, e.g. 2 + 2") ];
+        [
+          ("type", `String "object");
+          ( "expression",
+            `Assoc
+              [
+                ("type", `String "string");
+                ( "description",
+                  `String "A binary math expression like, e.g. 2 + 2" );
+              ] );
+        ];
     run =
       (fun args_json ->
         match args_json with
@@ -73,7 +82,16 @@ let read_tool =
     name = "read";
     description = "Reads the contents of a file.";
     schema =
-      `Assoc [ ("filename", `String "Path to a file, e.g. filename.txt") ];
+      `Assoc
+        [
+          ("type", `String "object");
+          ( "filename",
+            `Assoc
+              [
+                ("type", `String "string");
+                ("description", `String "Path to a file, e.g. filename.txt");
+              ] );
+        ];
     run =
       (fun args_json ->
         match args_json with
@@ -89,18 +107,78 @@ let read_tool =
                     Lwt_io.with_file ~mode:Lwt_io.input filename Lwt_io.read
                   in
                   Lwt.return content)
-                (fun _ -> Lwt.return "[Error reading file]")
+                (fun _ -> Lwt.return "[read failed]")
         | _ -> Lwt.return "Invalid JSON argument");
   }
 
-let tools = [ time_tool; math_tool; ls_tool; read_tool ]
+let edit_tool =
+  {
+    name = "edit";
+    description =
+      "Make edits to a text file. Finds all instances of the 'target' string \
+       and replaces them with the 'replacement'. If the file specified with \
+       filename doesn't exist, it will be created.";
+    schema =
+      `Assoc
+        [
+          ("type", `String "object");
+          ( "filename",
+            `Assoc
+              [
+                ("type", `String "string");
+                ("description", `String "The file to edit, e.g. \"notes.txt\"");
+              ] );
+          ( "target",
+            `Assoc
+              [
+                ("type", `String "string");
+                ("description", `String "The string to find");
+              ] );
+          ( "replacement",
+            `Assoc
+              [
+                ("type", `String "string");
+                ("description", `String "The string to replace it with");
+              ] );
+        ];
+    run =
+      (fun args ->
+        try
+          let open Yojson.Safe.Util in
+          let filename = args |> member "filename" |> to_string in
+          let target = args |> member "target" |> to_string in
+          let replacement = args |> member "replacement" |> to_string in
+
+          let%lwt original_content =
+            if Sys.file_exists filename then
+              Lwt_io.with_file ~mode:Lwt_io.Input filename Lwt_io.read
+            else Lwt.return ""
+          in
+
+          let updated =
+            Str.global_replace (Str.regexp_string target) replacement
+              original_content
+          in
+
+          let%lwt () =
+            Lwt_io.with_file ~mode:Lwt_io.Output filename (fun oc ->
+                Lwt_io.write oc updated)
+          in
+
+          Lwt.return
+            ("Updated file: " ^ filename ^ " — replaced \"" ^ target
+           ^ "\" with \"" ^ replacement ^ "\"")
+        with
+        | Yojson.Json_error msg | Yojson.Safe.Util.Type_error (msg, _) ->
+            Lwt.return ("Invalid input: " ^ msg)
+        | exn -> Lwt.return ("[edit failed] " ^ Printexc.to_string exn));
+  }
+
+let tools = [ time_tool; math_tool; ls_tool; read_tool; edit_tool ]
 let find_tool name = List.find_opt (fun t -> t.name = name) tools
 
 let tool_response_message tool_output =
-  {
-    role = `System;
-    content = "[Tool output for LLM to process]: " ^ tool_output;
-  }
+  { role = `User; content = "[Tool output for LLM to process]: " ^ tool_output }
 
 let tool_description tool =
   let schema_str = Yojson.Safe.pretty_to_string tool.schema in
@@ -110,9 +188,14 @@ let tool_description tool =
 let to_json tool =
   `Assoc
     [
-      ("name", `String tool.name);
-      ("description", `String tool.description);
-      ("schema", tool.schema);
+      ("type", `String "function");
+      ( "function",
+        `Assoc
+          [
+            ("name", `String tool.name);
+            ("description", `String tool.description);
+            ("schema", tool.schema);
+          ] );
     ]
 
 let all_to_json () = `List (List.map to_json tools)

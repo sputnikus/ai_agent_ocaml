@@ -26,7 +26,7 @@ let debug () = Sys.getenv_opt "AGENT_DEBUG" = Some "1"
 let llm_provider () = get_env "LLM_PROVIDER" ~default:"openai"
 
 (* Model configurations *)
-let openai_model () = get_env "OPENAI_MODEL" ~default:"gpt-3.5-turbo-0125"
+let openai_model () = get_env "OPENAI_MODEL" ~default:"gpt-4.1"
 
 let anthropic_model () =
   get_env "ANTHROPIC_MODEL" ~default:"claude-3-haiku-20240307"

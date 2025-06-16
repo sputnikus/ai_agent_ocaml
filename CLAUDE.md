@@ -8,6 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `dune exec bin/main.exe` - Run the AI agent executable 
 - `dune test` - Run tests
 - `dune clean` - Clean build artifacts
+- `dune fmt` - Format code
 
 ## Architecture Overview
 
@@ -103,3 +104,4 @@ Implementation aligns with [12-Factor Agents](https://github.com/humanlayer/12-f
 - Prefer adding tools over complex control flow
 - Maintain stateless design for predictability
 - Consider 12-factor principles when adding features
+- Always format created code using Dune formatter

@@ -4,7 +4,6 @@ open Config
 type tool_call = { name : string; arguments : Yojson.Safe.t }
 
 let system_prompt_with_tools =
-  let descriptions = tools |> List.map tool_description |> String.concat "\n" in
   {|You are a helpful AI assistant that can engage in natural conversation and use tools when needed.
 
   RESPONSE GUIDELINES:
@@ -29,38 +28,32 @@ let system_prompt_with_tools =
 
   IMPORTANT:
   - Only use JSON format when calling tools
-  - Never escape quotes in JSON
   - For all other responses, use natural language
   - After using tools, I will follow up with a natural language response
-
-  Available tools:
   |}
-  ^ descriptions
 
-(* Parse a tool call from LLM output *)
-let try_parse_tool_call json_str =
+let parse_tool_calls calls =
   try
     let open Yojson.Safe.Util in
-    let json = Yojson.Safe.from_string json_str in
-    let call = json |> member "tool_call" in
-    let name = call |> member "name" |> to_string in
-    let args = call |> member "arguments" in
-    (* We always want to return to handle and log in the REPL loop *)
-    Some (name, args)
+    let parsed =
+      List.filter_map
+        (fun call ->
+          try
+            let func = call |> member "function" in
+            let name = func |> member "name" |> to_string in
+            let args_str = func |> member "arguments" |> to_string in
+            let args = Yojson.Safe.from_string args_str in
+            Some { name; arguments = args }
+          with _ -> None)
+        calls
+    in
+    Some parsed
   with _ -> None
 
-let parse_tool_calls json_str : tool_call list option =
-  try
-    let open Yojson.Safe.Util in
-    let json = Yojson.Safe.from_string json_str in
-    let calls = json |> member "tool_calls" |> to_list in
-    Some
-      (calls
-      |> List.map (fun call ->
-             let name = call |> member "name" |> to_string in
-             let args = call |> member "arguments" in
-             { name; arguments = args }))
-  with _ -> None
+let tool_call_to_string call =
+  "{name:" ^ call.name ^ ", arguments:"
+  ^ Yojson.Safe.to_string call.arguments
+  ^ "}"
 
 let run_tool_chain tool_calls =
   let rec loop_chain acc_outputs = function

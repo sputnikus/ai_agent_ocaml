@@ -38,6 +38,8 @@ let build_request_body messages =
       ("messages", `List (List.map message_to_json non_system_msgs));
       ("max_tokens", `Int (Config.max_chars ()));
       ("temperature", `Float 0.7);
+      (* new: LLM-API-visible tools *)
+      ("tools", Tool.all_to_json ());
     ]
   in
   let fields =
@@ -66,7 +68,7 @@ let send_request messages =
   in
   let%lwt body_str = Cohttp_lwt.Body.to_string body_stream in
   match extract_reply body_str with
-  | Some reply -> Lwt.return reply
-  | None -> Lwt.return "[error parsing Anthropic reply]"
+  | Some reply -> Lwt.return (Content reply)
+  | None -> Lwt.return (Malformed "[error parsing Anthropic reply]")
 
 let create () = { name = "Anthropic"; send_request }
