@@ -11,5 +11,5 @@ let create_provider () =
 
 let get_provider () =
   let provider = create_provider () in
-  Logger.info ("Using LLM provider: " ^ provider.name);
+  Logger.info ~tag:"llm_provider" ("Using LLM provider: " ^ provider.name);
   provider

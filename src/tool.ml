@@ -194,7 +194,7 @@ let to_json tool =
           [
             ("name", `String tool.name);
             ("description", `String tool.description);
-            ("schema", tool.schema);
+            ("parameters", tool.schema);
           ] );
     ]
 

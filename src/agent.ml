@@ -51,7 +51,7 @@ let parse_tool_calls calls =
   with _ -> None
 
 let tool_call_to_string call =
-  "{name:" ^ call.name ^ ", arguments:"
+  "{name:" ^ call.name ^ ",arguments:"
   ^ Yojson.Safe.to_string call.arguments
   ^ "}"
 

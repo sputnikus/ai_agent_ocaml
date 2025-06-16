@@ -69,15 +69,13 @@ let handle_tool_calls context calls =
   let parsed_calls = parse_tool_calls calls in
   match parsed_calls with
   | Some parsed -> (
+      let parsed_text =
+        String.concat ", " (List.map tool_call_to_string parsed)
+      in
+      Logger.info ~tag:"llm_tool" parsed_text;
       let%lwt outputs = run_tool_chain parsed in
       let context =
-        add_turns context
-          [
-            {
-              role = `Assistant;
-              content = String.concat ", " (List.map tool_call_to_string parsed);
-            };
-          ]
+        add_turns context [ { role = `Assistant; content = parsed_text } ]
       in
       let context =
         add_turns context (List.map tool_response_message outputs)
@@ -99,14 +97,16 @@ let handle_tool_calls context calls =
                ])
       | _ ->
           let%lwt () =
-            Lwt_io.printf "%sSystem%s: Malformed follow-up\n\n" red color_reset
+            Lwt_io.printf "%sAssistant%s: Malformed follow-up\n\n" yellow
+              color_reset
           in
           Lwt.return
             (add_turns context
                [ { role = `Assistant; content = "Malformed follow-up" } ]))
   | None ->
       let%lwt () =
-        Lwt_io.printf "%sSystem%s: Invalid tool chain.\n\n" red color_reset
+        Lwt_io.printf "%sAssistant%s: Invalid tool chain.\n\n" yellow
+          color_reset
       in
       Lwt.return
         (add_turns context
