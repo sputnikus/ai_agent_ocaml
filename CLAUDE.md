@@ -5,10 +5,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Build and Development Commands
 
 - `dune build` - Build the project
-- `dune exec bin/main.exe` - Run the AI agent executable 
+- `AGENT_LOG='agent.log' AGENT_DEBUG=1 ./_build/default/bin/main.exe` - Run the AI agent executable
 - `dune test` - Run tests
 - `dune clean` - Clean build artifacts
 - `dune fmt` - Format code
+- `jj cdesc` - Automatically generate commit message
 
 ## Architecture Overview
 
@@ -85,7 +86,7 @@ Implementation aligns with [12-Factor Agents](https://github.com/humanlayer/12-f
 **Optional:**
 - `OPENAI_MODEL` - OpenAI model to use (default: gpt-3.5-turbo-0125)
 - `ANTHROPIC_MODEL` - Anthropic model to use (default: claude-3-haiku-20240307)
-- `AGENT_NAME` - Agent name (default: OCamlAgent)
+- `AGENT_NAME` - Agent name (default: CamelGent)
 - `AGENT_DEBUG` - Set to "1" to enable debug logging
 - `AGENT_TOOL_TIMEOUT` - Tool execution timeout in seconds (default: 10)
 - `AGENT_LOG` - Log file path

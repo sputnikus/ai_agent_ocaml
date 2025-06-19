@@ -19,7 +19,7 @@ let anthropic_api_key () =
   | Some key -> key
   | None -> failwith "Missing ANTHROPIC_API_KEY environment variable"
 
-let agent_name () = get_env "AGENT_NAME" ~default:"OCamlAgent"
+let agent_name () = get_env "AGENT_NAME" ~default:"CamelGent"
 let debug () = Sys.getenv_opt "AGENT_DEBUG" = Some "1"
 
 (* Provider selection *)

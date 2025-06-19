@@ -1,27 +1,24 @@
 (lang dune 3.19)
 
-(name ai_agent_ocaml)
+(name camelgent)
 
 (generate_opam_files true)
 
 (source
- (github username/reponame))
+ (github sputnikus/camelgent))
 
-(authors "Author Name <author@example.com>")
+(authors "Martin Putniorz <mputniorz@gmail.com>")
 
-(maintainers "Maintainer Name <maintainer@example.com>")
+(maintainers "Martin Putniorz <mputniorz@gmail.com>")
 
 (license LICENSE)
 
-(documentation https://url/to/documentation)
-
 (package
  (allow_empty)
- (name ai_agent_ocaml)
- (synopsis "A short synopsis")
- (description "A longer description")
+ (name camelgent)
+ (synopsis "Coding AI Agent implemented in OCaml")
  (depends ocaml lwt lwt_ppx cohttp-lwt-unix yojson)
  (tags
-  ("add topics" "to describe" your project)))
+  ("LLM" "AI Agent")))
 
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/reference/dune-project/index.html
