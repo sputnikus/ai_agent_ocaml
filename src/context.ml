@@ -1,4 +1,4 @@
-open Agent
+open Llm_provider
 open Message
 
 type t = { system : message; turns : message list; max_chars : int }
@@ -9,9 +9,11 @@ let trim_history ~max_chars turns =
     | [] -> acc
     | msg :: rest ->
         let total =
-          List.fold_left (fun sum m -> sum + String.length m.content) 0 acc
+          List.fold_left
+            (fun sum m -> sum + String.length (content_as_str m))
+            0 acc
         in
-        if total + String.length msg.content > max_chars then acc
+        if total + String.length (content_as_str msg) > max_chars then acc
         else loop (msg :: acc) rest
   in
   (* We are trimming the oldest, keeping the most recent*)
@@ -31,7 +33,7 @@ let build_prompt context =
     ]
 
 let init_context max_chars =
-  let system = { role = `System; content = system_prompt_with_tools } in
+  let system = { role = `System; content = Text system_prompt } in
   { system; turns = []; max_chars }
 
 let add_turns context messages =

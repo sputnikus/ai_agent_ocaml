@@ -35,12 +35,16 @@ let math_tool =
       `Assoc
         [
           ("type", `String "object");
-          ( "expression",
+          ( "properties",
             `Assoc
               [
-                ("type", `String "string");
-                ( "description",
-                  `String "A binary math expression like, e.g. 2 + 2" );
+                ( "expression",
+                  `Assoc
+                    [
+                      ("type", `String "string");
+                      ( "description",
+                        `String "A binary math expression like, e.g. 2 + 2" );
+                    ] );
               ] );
         ];
     run =
@@ -85,11 +89,16 @@ let read_tool =
       `Assoc
         [
           ("type", `String "object");
-          ( "filename",
+          ( "properties",
             `Assoc
               [
-                ("type", `String "string");
-                ("description", `String "Path to a file, e.g. filename.txt");
+                ( "filename",
+                  `Assoc
+                    [
+                      ("type", `String "string");
+                      ( "description",
+                        `String "Path to a file, e.g. filename.txt" );
+                    ] );
               ] );
         ];
     run =
@@ -122,23 +131,28 @@ let edit_tool =
       `Assoc
         [
           ("type", `String "object");
-          ( "filename",
+          ( "properties",
             `Assoc
               [
-                ("type", `String "string");
-                ("description", `String "The file to edit, e.g. \"notes.txt\"");
-              ] );
-          ( "target",
-            `Assoc
-              [
-                ("type", `String "string");
-                ("description", `String "The string to find");
-              ] );
-          ( "replacement",
-            `Assoc
-              [
-                ("type", `String "string");
-                ("description", `String "The string to replace it with");
+                ( "filename",
+                  `Assoc
+                    [
+                      ("type", `String "string");
+                      ( "description",
+                        `String "The file to edit, e.g. \"notes.txt\"" );
+                    ] );
+                ( "target",
+                  `Assoc
+                    [
+                      ("type", `String "string");
+                      ("description", `String "The string to find");
+                    ] );
+                ( "replacement",
+                  `Assoc
+                    [
+                      ("type", `String "string");
+                      ("description", `String "The string to replace it with");
+                    ] );
               ] );
         ];
     run =
@@ -178,7 +192,7 @@ let tools = [ time_tool; math_tool; ls_tool; read_tool; edit_tool ]
 let find_tool name = List.find_opt (fun t -> t.name = name) tools
 
 let tool_response_message tool_output =
-  { role = `User; content = "[Tool output for LLM to process]: " ^ tool_output }
+  user ("[Tool output for LLM to process]: " ^ tool_output)
 
 let tool_description tool =
   let schema_str = Yojson.Safe.pretty_to_string tool.schema in

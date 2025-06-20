@@ -20,18 +20,13 @@ let message_to_json msg = Message.yojson_of_message msg
 
 (* Anthropic API requires system message to be separate from messages array *)
 let separate_system_message messages =
-  let system_msgs, other_msgs =
+  let _, other_msgs =
     List.partition (fun msg -> msg.Message.role = `System) messages
   in
-  let system_content =
-    system_msgs
-    |> List.map (fun msg -> msg.Message.content)
-    |> String.concat "\n\n"
-  in
-  (system_content, other_msgs)
+  other_msgs
 
 let build_request_body messages =
-  let system_content, non_system_msgs = separate_system_message messages in
+  let non_system_msgs = separate_system_message messages in
   let base_fields =
     [
       ("model", `String (Config.anthropic_model ()));
@@ -42,11 +37,7 @@ let build_request_body messages =
       ("tools", Tool.all_to_json ());
     ]
   in
-  let fields =
-    if system_content <> "" then
-      ("system", `String system_content) :: base_fields
-    else base_fields
-  in
+  let fields = ("system", `String system_prompt) :: base_fields in
   `Assoc fields
 
 let send_request messages =

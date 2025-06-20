@@ -68,49 +68,15 @@ let handle_special_commands context input =
 let handle_tool_calls context calls =
   let parsed_calls = parse_tool_calls calls in
   match parsed_calls with
-  | Some parsed -> (
-      let parsed_text =
-        String.concat ", " (List.map tool_call_to_string parsed)
-      in
-      Logger.info ~tag:"llm_tool" parsed_text;
-      let%lwt outputs = run_tool_chain parsed in
-      let context =
-        add_turns context [ { role = `Assistant; content = parsed_text } ]
-      in
-      let context =
-        add_turns context (List.map tool_response_message outputs)
-      in
-      let prompt = build_prompt context in
-      let%lwt follow_up = fetch_reply prompt in
-      match follow_up with
-      | Content text ->
-          let%lwt () =
-            Lwt_io.printf "%sAssistant%s: %s\n\n" green color_reset text
-          in
-          Lwt.return
-            (add_turns context
-               [
-                 {
-                   role = `Assistant;
-                   content = "[Tool chain follow-up] " ^ text;
-                 };
-               ])
-      | _ ->
-          let%lwt () =
-            Lwt_io.printf "%sAssistant%s: Malformed follow-up\n\n" yellow
-              color_reset
-          in
-          Lwt.return
-            (add_turns context
-               [ { role = `Assistant; content = "Malformed follow-up" } ]))
+  | Some parsed ->
+      let%lwt new_context = run_interactive_tools context parsed in
+      Lwt.return new_context
   | None ->
       let%lwt () =
         Lwt_io.printf "%sAssistant%s: Invalid tool chain.\n\n" yellow
           color_reset
       in
-      Lwt.return
-        (add_turns context
-           [ { role = `Assistant; content = "Malformed response" } ])
+      Lwt.return (add_turns context [ assistant "Malformed response" ])
 
 let repl_loop context =
   let shutdown_promise = Shutdown.wait_for_shutdown () in
@@ -138,9 +104,7 @@ let repl_loop context =
         | `Continue new_context -> loop new_context
         | `Process input -> (
             Logger.info ~tag:"user_input" input;
-            let context =
-              add_turns context [ { role = `User; content = input } ]
-            in
+            let context = add_turns context [ user input ] in
             let messages = build_messages context in
             let%lwt reply = fetch_reply_messages messages in
             match reply with
@@ -152,18 +116,15 @@ let repl_loop context =
                 let%lwt () =
                   Lwt_io.printf "%sAssistant%s: %s\n\n" green color_reset text
                 in
-                let context =
-                  add_turns context [ { role = `Assistant; content = text } ]
-                in
+                let context = add_turns context [ assistant text ] in
                 loop context
             | Malformed exc_string ->
                 let%lwt () =
-                  Lwt_io.printf "%sSystem%s: Malformed response: %s\n\n" red
+                  Lwt_io.printf "%sAssistant%s: Malformed response: %s\n\n" red
                     color_reset exc_string
                 in
                 let context =
-                  add_turns context
-                    [ { role = `Assistant; content = "Malformed response" } ]
+                  add_turns context [ assistant "Malformed response" ]
                 in
                 loop context))
   in
