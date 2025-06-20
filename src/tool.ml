@@ -191,9 +191,6 @@ let edit_tool =
 let tools = [ time_tool; math_tool; ls_tool; read_tool; edit_tool ]
 let find_tool name = List.find_opt (fun t -> t.name = name) tools
 
-let tool_response_message tool_output =
-  user ("[Tool output for LLM to process]: " ^ tool_output)
-
 let tool_description tool =
   let schema_str = Yojson.Safe.pretty_to_string tool.schema in
   Printf.sprintf "- %s: %s\n  Arguments JSON: %s" tool.name tool.description
