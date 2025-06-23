@@ -111,6 +111,14 @@ let repl_loop context =
             | ToolCalls calls ->
                 let%lwt context = handle_tool_calls context calls in
                 loop context
+            | MixedContent (text, calls) ->
+                Logger.info ~tag:"llm_reply" text;
+                let%lwt () =
+                  Lwt_io.printf "%sAssistant%s: %s\n\n" green color_reset text
+                in
+                let context = add_turns context [ assistant text ] in
+                let%lwt context = handle_tool_calls context calls in
+                loop context
             | Content text ->
                 Logger.info ~tag:"llm_reply" text;
                 let%lwt () =

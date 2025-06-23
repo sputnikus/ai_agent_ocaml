@@ -81,6 +81,19 @@ let run_interactive_tools context initial_calls =
                 match parsed with
                 | Some tools -> interaction_loop context tools
                 | None -> Lwt.return context)
+            | MixedContent (text, next_calls) -> (
+                (* LLM provided text and wants to use tools *)
+                Logger.info ~tag:"llm_reply" text;
+                let%lwt () =
+                  Lwt_io.printf "%sAssistant%s: %s\n\n" green color_reset text
+                in
+                (* Add the assistant text to context first *)
+                let context = add_turns context [ assistant text ] in
+                (* Then process the tool calls *)
+                let%lwt parsed = Lwt.return (parse_tool_calls next_calls) in
+                match parsed with
+                | Some tools -> interaction_loop context tools
+                | None -> Lwt.return context)
             | Content text ->
                 (* LLM is done with tools - add final response *)
                 Logger.info ~tag:"llm_reply" text;

@@ -1,5 +1,3 @@
-open Message
-
 type result = string
 
 type t = {
@@ -13,7 +11,7 @@ let time_tool =
   {
     name = "time";
     description = "Returns the current time.";
-    schema = `Null;
+    schema = `Assoc [ ("type", `String "object"); ("properties", `Assoc []) ];
     (* No parameters needed *)
     run =
       (fun _ ->
@@ -46,6 +44,7 @@ let math_tool =
                         `String "A binary math expression like, e.g. 2 + 2" );
                     ] );
               ] );
+          ("required", `List [ `String "expression" ]);
         ];
     run =
       (fun args_json ->
@@ -68,7 +67,7 @@ let ls_tool =
   {
     name = "ls";
     description = "Lists the contents of the current directory.";
-    schema = `Null;
+    schema = `Assoc [ ("type", `String "object"); ("properties", `Assoc []) ];
     (* No parameters needed *)
     run =
       (fun _ ->
@@ -100,6 +99,7 @@ let read_tool =
                         `String "Path to a file, e.g. filename.txt" );
                     ] );
               ] );
+          ("required", `List [ `String "filename" ]);
         ];
     run =
       (fun args_json ->
@@ -154,6 +154,9 @@ let edit_tool =
                       ("description", `String "The string to replace it with");
                     ] );
               ] );
+          ( "required",
+            `List
+              [ `String "filename"; `String "target"; `String "replacement" ] );
         ];
     run =
       (fun args ->
@@ -197,16 +200,26 @@ let tool_description tool =
     schema_str
 
 let to_json tool =
-  `Assoc
-    [
-      ("type", `String "function");
-      ( "function",
-        `Assoc
-          [
-            ("name", `String tool.name);
-            ("description", `String tool.description);
-            ("parameters", tool.schema);
-          ] );
-    ]
+  match String.lowercase_ascii (Config.llm_provider ()) with
+  | "openai" ->
+      `Assoc
+        [
+          ("type", `String "function");
+          ( "function",
+            `Assoc
+              [
+                ("name", `String tool.name);
+                ("description", `String tool.description);
+                ("parameters", tool.schema);
+              ] );
+        ]
+  | "anthropic" ->
+      `Assoc
+        [
+          ("name", `String tool.name);
+          ("description", `String tool.description);
+          ("input_schema", tool.schema);
+        ]
+  | _ -> failwith "Unsupported LLM provider"
 
 let all_to_json () = `List (List.map to_json tools)

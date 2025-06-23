@@ -33,32 +33,74 @@ let yojson_of_tool_function { name; arguments } =
     ]
 
 let yojson_of_tool_call { id; function_ } =
-  `Assoc
-    [
-      ("id", match id with Some i -> `String i | None -> `Null);
-      ("type", `String "function");
-      ("function", yojson_of_tool_function function_);
-    ]
+  match String.lowercase_ascii (Config.llm_provider ()) with
+  | "anthropic" ->
+      `Assoc
+        [
+          ("id", match id with Some i -> `String i | None -> `Null);
+          ("type", `String "tool_use");
+          ("name", `String function_.name);
+          ("input", function_.arguments);
+        ]
+  | "openai" | _ ->
+      `Assoc
+        [
+          ("id", match id with Some i -> `String i | None -> `Null);
+          ("type", `String "function");
+          ("function", yojson_of_tool_function function_);
+        ]
 
 let yojson_of_message { role; content } =
-  match content with
-  | Text text ->
-      `Assoc [ ("role", yojson_of_role role); ("content", `String text) ]
-  | ToolCalls calls ->
-      `Assoc
-        [
-          ("role", yojson_of_role role);
-          ("content", `Null);
-          ("tool_calls", `List (List.map yojson_of_tool_call calls));
-        ]
-  | ToolResponse { tool_call_id; output_ } ->
-      `Assoc
-        [
-          ("role", yojson_of_role role);
-          ("content", `String output_);
-          ( "tool_call_id",
-            match tool_call_id with Some i -> `String i | None -> `Null );
-        ]
+  match String.lowercase_ascii (Config.llm_provider ()) with
+  | "anthropic" -> (
+      match content with
+      | Text text ->
+          `Assoc [ ("role", yojson_of_role role); ("content", `String text) ]
+      | ToolCalls _calls ->
+          (* Claude doesn't use tool_calls in messages - this shouldn't happen *)
+          `Assoc
+            [
+              ("role", yojson_of_role role);
+              ("content", `List (List.map yojson_of_tool_call _calls));
+            ]
+      | ToolResponse { tool_call_id; output_ } ->
+          (* Claude expects tool results as user messages with structured content *)
+          `Assoc
+            [
+              ("role", `String "user");
+              ( "content",
+                `List
+                  [
+                    `Assoc
+                      [
+                        ("type", `String "tool_result");
+                        ( "tool_use_id",
+                          match tool_call_id with
+                          | Some i -> `String i
+                          | None -> `Null );
+                        ("content", `String output_);
+                      ];
+                  ] );
+            ])
+  | "openai" | _ -> (
+      match content with
+      | Text text ->
+          `Assoc [ ("role", yojson_of_role role); ("content", `String text) ]
+      | ToolCalls calls ->
+          `Assoc
+            [
+              ("role", yojson_of_role role);
+              ("content", `Null);
+              ("tool_calls", `List (List.map yojson_of_tool_call calls));
+            ]
+      | ToolResponse { tool_call_id; output_ } ->
+          `Assoc
+            [
+              ("role", yojson_of_role role);
+              ("content", `String output_);
+              ( "tool_call_id",
+                match tool_call_id with Some i -> `String i | None -> `Null );
+            ])
 
 (* Helper constructors *)
 let system text = { role = `System; content = Text text }

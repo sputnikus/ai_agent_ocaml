@@ -29,7 +29,7 @@ let llm_provider () = get_env "LLM_PROVIDER" ~default:"openai"
 let openai_model () = get_env "OPENAI_MODEL" ~default:"gpt-4.1"
 
 let anthropic_model () =
-  get_env "ANTHROPIC_MODEL" ~default:"claude-3-haiku-20240307"
+  get_env "ANTHROPIC_MODEL" ~default:"claude-3-5-sonnet-latest"
 
 let tool_timeout () =
   match Sys.getenv_opt "AGENT_TOOL_TIMEOUT" with

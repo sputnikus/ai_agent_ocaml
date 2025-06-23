@@ -6,15 +6,78 @@ let extract_reply body_str =
   match json with
   | `Assoc fields -> (
       match List.assoc_opt "content" fields with
-      | Some (`List (first_content :: _)) -> (
-          match first_content with
-          | `Assoc content_fields -> (
-              match List.assoc_opt "text" content_fields with
-              | Some (`String reply) -> Some reply
-              | _ -> Some "[Could not extract assistant text content.]")
-          | _ -> Some "[First content is not an object.]")
-      | _ -> Some "[Missing or invalid 'content' field.]")
-  | _ -> None
+      | Some (`List content_blocks) ->
+          let tool_calls = ref [] in
+          let text_parts = ref [] in
+
+          (* Process each content block *)
+          List.iter
+            (fun block ->
+              match block with
+              | `Assoc block_fields -> (
+                  match List.assoc_opt "type" block_fields with
+                  | Some (`String "text") -> (
+                      match List.assoc_opt "text" block_fields with
+                      | Some (`String text) -> text_parts := text :: !text_parts
+                      | _ -> ())
+                  | Some (`String "tool_use") -> (
+                      (* Extract tool call information *)
+                      let id =
+                        List.assoc_opt "id" block_fields |> function
+                        | Some (`String id) -> Some id
+                        | _ -> None
+                      in
+                      let name =
+                        List.assoc_opt "name" block_fields |> function
+                        | Some (`String name) -> Some name
+                        | _ -> None
+                      in
+                      let input =
+                        List.assoc_opt "input" block_fields |> function
+                        | Some input -> Some input
+                        | _ -> None
+                      in
+
+                      match (name, input) with
+                      | Some name, Some input ->
+                          let tool_call =
+                            `Assoc
+                              [
+                                ( "id",
+                                  match id with
+                                  | Some id -> `String id
+                                  | None -> `Null );
+                                ( "function",
+                                  `Assoc
+                                    [
+                                      ("name", `String name);
+                                      ( "arguments",
+                                        `String (Yojson.Safe.to_string input) );
+                                    ] );
+                              ]
+                          in
+                          tool_calls := tool_call :: !tool_calls
+                      | _ -> ())
+                  | _ -> ())
+              | _ -> ())
+            content_blocks;
+
+          (* Return based on what we found *)
+          if !tool_calls <> [] && !text_parts <> [] then
+            (* Has both text and tool calls - return mixed content *)
+            MixedContent
+              (String.concat " " (List.rev !text_parts), List.rev !tool_calls)
+          else if !tool_calls <> [] then
+            (* Has only tool calls - return them *)
+            ToolCalls (List.rev !tool_calls)
+          else if !text_parts <> [] then
+            (* Has only text content - return it *)
+            Content (String.concat " " (List.rev !text_parts))
+          else
+            (* No content found *)
+            Malformed "[No valid content found in response]"
+      | _ -> Malformed "[Missing or invalid 'content' field.]")
+  | _ -> Malformed "[Invalid JSON response format]"
 
 let message_to_json msg = Message.yojson_of_message msg
 
@@ -58,8 +121,6 @@ let send_request messages =
       uri
   in
   let%lwt body_str = Cohttp_lwt.Body.to_string body_stream in
-  match extract_reply body_str with
-  | Some reply -> Lwt.return (Content reply)
-  | None -> Lwt.return (Malformed "[error parsing Anthropic reply]")
+  Lwt.return (extract_reply body_str)
 
 let create () = { name = "Anthropic"; send_request }
